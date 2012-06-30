@@ -181,16 +181,22 @@ void ZBarReaderTest::decodeIterative()
     }
     QTextStream stream(&mLogFile);
 
+    int totalFiles = files.size();
+
     QVector<QRgb>colorTable;
     for (int x = 0; x < 256; x++)
         colorTable << qRgb(x,x,x);
 
     QTime timer;
     timer.start();
-    int totalFiles = files.size();
     for (int x = 0; x < totalFiles; x++) {
         QString line = QString::number(x + 1) + " / " + QString::number(totalFiles) + " : " + files[x].split("/").takeLast();
-        QImage img(mInputDir + "/" + files[x]);
+        QImage img;
+        if (!readFromFileCheck->isChecked())
+            img = QImage(mInputDir + "/" + files[x]);
+        else
+            img = QImage(files[x]);
+
         if (img.isNull()) {
             line += " | Invalid image";
             continue;
