@@ -242,10 +242,6 @@ QString ZBarReaderTest::decode(const QImage &image, bool useHints)
             for (int x = 0; x < image.width(); x += 50) {
                 for (int y = 0; y < image.height(); y += 50) {
 //                  qDebug () << "roiWidth" << roiWidth << "roiHeight" << roiHeight;
-                  if (roiWidth + x > image.width())
-                      roiWidth = image.width() - x;
-                  if (roiHeight + y > image.height())
-                      roiHeight = image.height() - y;
                     QImage img = image.copy(x, y, roiWidth, roiHeight);
                     Image i(img.width(), img.height(), "Y800", img.bits(), img.bytesPerLine() * img.height());
                     scanner.scan(i);
