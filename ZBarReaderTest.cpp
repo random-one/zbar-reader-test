@@ -96,7 +96,6 @@ void ZBarReaderTest::decode()
         QDir inputDir(mInputDir);
         files = inputDir.entryList(QStringList() << "*.png" << "*.jpeg" << "*.jpg" << "*.bmp");
         files.sort();
-        mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
     } else {
         QFile f(mInputFile);
         if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -106,8 +105,9 @@ void ZBarReaderTest::decode()
         QString content = f.readAll();
         files = content.split("\n", QString::SkipEmptyParts);
         qDebug () << files;
-        mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
     }
+    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
+
     if (!mLogFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to open log file"));
         return;
@@ -163,7 +163,6 @@ void ZBarReaderTest::decodeIterative()
         QDir inputDir(mInputDir);
         files = inputDir.entryList(QStringList() << "*.png" << "*.jpeg" << "*.jpg" << "*.bmp");
         files.sort();
-        mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
     } else {
         QFile f(mInputFile);
         if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -173,8 +172,9 @@ void ZBarReaderTest::decodeIterative()
         QString content = f.readAll();
         files = content.split("\n", QString::SkipEmptyParts);
         qDebug () << files;
-        mLogFile.setFileName(QString("zbar-reader-report-%1-%2-force-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
     }
+    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-force-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
+
     if (!mLogFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to open log file"));
         return;
