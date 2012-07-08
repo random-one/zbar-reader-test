@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QFile>
+#include <QFuture>
 
 #include "ui_ZBarReaderTest.h"
 
@@ -34,6 +35,8 @@ private:
     int mTotalRead;
     QFile mLogFile;
     QStringList mFiles;
+    QFuture <QString> *future;
+    QFutureWatcher <QString> *watcher;
 };
 
 #endif // ZBARREADERTEST_H

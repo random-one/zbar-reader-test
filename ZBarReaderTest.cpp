@@ -4,6 +4,9 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTime>
+#include <QFuture>
+#include <QFutureWatcher>
+#include <QtCore>
 
 #include <time.h>
 
@@ -22,6 +25,9 @@ ZBarReaderTest::ZBarReaderTest(QWidget *parent) :
 
     init();
 
+    future = new QFuture<QString>;
+    watcher = new QFutureWatcher<QString>;
+
     generateInputFileCheck->setChecked(false);
     enableGenerateInputFile();
     readFromFileCheck->setChecked(false);
@@ -30,6 +36,10 @@ ZBarReaderTest::ZBarReaderTest(QWidget *parent) :
 
 ZBarReaderTest::~ZBarReaderTest()
 {
+    if (future != NULL)
+        delete future;
+    if (watcher != NULL)
+        delete watcher;
 }
 
 void ZBarReaderTest::init()
@@ -122,7 +132,10 @@ void ZBarReaderTest::decode()
         }
         QImage tmp = img.convertToFormat(QImage::Format_Indexed8, colorTable);
 
-        QString result = decode(tmp);
+        *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, false);
+        watcher->setFuture(*future);
+
+        QString result = future->result();
         if (result.isEmpty())
             line += " | Unable to decode";
         else
@@ -132,7 +145,7 @@ void ZBarReaderTest::decode()
         stream << line << endl;
         resultOutputEdit->append(line);
         resultOutputEdit->textCursor ().movePosition (QTextCursor::End);
-        QCoreApplication::sendPostedEvents();
+        qApp->processEvents();
     }
     int time = (double)timer.elapsed() / 1000.;
     QString res = QString("Total read: %1\nTime elapsed: %2 s.\n").arg(mTotalRead).arg(time);
@@ -174,9 +187,14 @@ void ZBarReaderTest::decodeIterative()
         }
         QImage tmp = img.convertToFormat(QImage::Format_Indexed8, colorTable);
 
-        QString result = decode(tmp);
-        if (result.isEmpty())
-            result = decode(tmp, true);
+        *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, false);
+        watcher->setFuture(*future);
+
+        QString result = future->result();
+        if (result.isEmpty()) {
+            *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, true);
+            watcher->setFuture(*future);
+        }
         if (result.isEmpty())
             line += " | Unable to decode";
         else
@@ -186,7 +204,7 @@ void ZBarReaderTest::decodeIterative()
         stream << line << endl;
         resultOutputEdit->append(line);
         resultOutputEdit->textCursor ().movePosition (QTextCursor::End);
-        QCoreApplication::sendPostedEvents();
+        qApp->processEvents();
     }
     int time = (double)timer.elapsed() / 1000.;
     QString res = QString("Total read: %1\nTime elapsed: %2 s.\n").arg(mTotalRead).arg(time);
