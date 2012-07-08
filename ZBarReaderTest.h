@@ -26,12 +26,14 @@ private slots:
 
 private:
     QString decode(const QImage &image, bool useHints = false);
+    void loadFiles();
 
 private:
     QString mInputDir;
     QString mInputFile;
     int mTotalRead;
     QFile mLogFile;
+    QStringList mFiles;
 };
 
 #endif // ZBARREADERTEST_H

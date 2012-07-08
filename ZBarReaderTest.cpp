@@ -76,6 +76,8 @@ void ZBarReaderTest::selectInputDir()
         inputDirEdit->setText(mInputDir);
     }
     enableGenerateInputFile();
+
+    loadFiles();
 }
 
 void ZBarReaderTest::selectInputFile()
@@ -86,27 +88,14 @@ void ZBarReaderTest::selectInputFile()
         mInputFile = fileDialog.selectedFiles().takeFirst();
         inputFileEdit->setText(mInputFile);
     }
+    loadFiles();
 }
 
 void ZBarReaderTest::decode()
 {
     mTotalRead = 0;
-    QStringList files;
-    if (!readFromFileCheck->isChecked()) {
-        QDir inputDir(mInputDir);
-        files = inputDir.entryList(QStringList() << "*.png" << "*.jpeg" << "*.jpg" << "*.bmp");
-        files.sort();
-    } else {
-        QFile f(mInputFile);
-        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QMessageBox::critical(this, tr("Error"), tr("Unable to open input file"), QMessageBox::Ok);
-            return;
-        }
-        QString content = f.readAll();
-        files = content.split("\n", QString::SkipEmptyParts);
-        qDebug () << files;
-    }
-    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
+    int totalFiles = mFiles.size();
+    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-decode.txt").arg(totalFiles).arg(QDir(mInputDir).dirName()));
 
     if (!mLogFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to open log file"));
@@ -114,21 +103,19 @@ void ZBarReaderTest::decode()
     }
     QTextStream stream(&mLogFile);
 
-    int totalFiles = files.size();
-
     QVector<QRgb>colorTable;
     for (int x = 0; x < 256; x++)
         colorTable << qRgb(x,x,x);
 
     QTime timer;
     timer.start();
-    for (int x = 0; x < files.size(); x++) {
-        QString line = QString::number(x + 1) + " / " + QString::number(totalFiles) + " : " + files[x].split("/").takeLast();
+    for (int x = 0; x < mFiles.size(); x++) {
+        QString line = QString::number(x + 1) + " / " + QString::number(totalFiles) + " : " + mFiles[x].split("/").takeLast();
         QImage img;
         if (!readFromFileCheck->isChecked())
-            img = QImage(mInputDir + "/" + files[x]);
+            img = QImage(mInputDir + "/" + mFiles[x]);
         else
-            img = QImage(files[x]);
+            img = QImage(mFiles[x]);
         if (img.isNull()) {
             line += " | Invalid image";
             continue;
@@ -158,30 +145,14 @@ void ZBarReaderTest::decode()
 void ZBarReaderTest::decodeIterative()
 {
     mTotalRead = 0;
-    QStringList files;
-    if (!readFromFileCheck->isChecked()) {
-        QDir inputDir(mInputDir);
-        files = inputDir.entryList(QStringList() << "*.png" << "*.jpeg" << "*.jpg" << "*.bmp");
-        files.sort();
-    } else {
-        QFile f(mInputFile);
-        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            QMessageBox::critical(this, tr("Error"), tr("Unable to open input file"), QMessageBox::Ok);
-            return;
-        }
-        QString content = f.readAll();
-        files = content.split("\n", QString::SkipEmptyParts);
-        qDebug () << files;
-    }
-    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-force-decode.txt").arg(files.size()).arg(QDir(mInputDir).dirName()));
+    int totalFiles = mFiles.size();
+    mLogFile.setFileName(QString("zbar-reader-report-%1-%2-force-decode.txt").arg(totalFiles).arg(QDir(mInputDir).dirName()));
 
     if (!mLogFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QMessageBox::critical(this, tr("Error"), tr("Unable to open log file"));
         return;
     }
     QTextStream stream(&mLogFile);
-
-    int totalFiles = files.size();
 
     QVector<QRgb>colorTable;
     for (int x = 0; x < 256; x++)
@@ -190,12 +161,12 @@ void ZBarReaderTest::decodeIterative()
     QTime timer;
     timer.start();
     for (int x = 0; x < totalFiles; x++) {
-        QString line = QString::number(x + 1) + " / " + QString::number(totalFiles) + " : " + files[x].split("/").takeLast();
+        QString line = QString::number(x + 1) + " / " + QString::number(totalFiles) + " : " + mFiles[x].split("/").takeLast();
         QImage img;
         if (!readFromFileCheck->isChecked())
-            img = QImage(mInputDir + "/" + files[x]);
+            img = QImage(mInputDir + "/" + mFiles[x]);
         else
-            img = QImage(files[x]);
+            img = QImage(mFiles[x]);
 
         if (img.isNull()) {
             line += " | Invalid image";
@@ -262,6 +233,25 @@ QString ZBarReaderTest::decode(const QImage &image, bool useHints)
         }
     }
     return line;
+}
+
+void ZBarReaderTest::loadFiles()
+{
+    mFiles.clear();
+    if (!readFromFileCheck->isChecked()) {
+        QDir inputDir(mInputDir);
+        mFiles = inputDir.entryList(QStringList() << "*.png" << "*.jpeg" << "*.jpg" << "*.bmp");
+        mFiles.sort();
+    } else {
+        QFile f(mInputFile);
+        if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QMessageBox::critical(this, tr("Error"), tr("Unable to open input file"), QMessageBox::Ok);
+            return;
+        }
+        QString content = f.readAll();
+        mFiles = content.split("\n", QString::SkipEmptyParts);
+    }
+    qDebug () << mFiles;
 }
 
 void ZBarReaderTest::writeInputFile()
