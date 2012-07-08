@@ -132,7 +132,7 @@ void ZBarReaderTest::decode()
         }
         QImage tmp = img.convertToFormat(QImage::Format_Indexed8, colorTable);
 
-        *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, false);
+        *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp);
         watcher->setFuture(*future);
 
         QString result = future->result();
@@ -187,14 +187,10 @@ void ZBarReaderTest::decodeIterative()
         }
         QImage tmp = img.convertToFormat(QImage::Format_Indexed8, colorTable);
 
-        *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, false);
+        *future = QtConcurrent::run(this, &ZBarReaderTest::decodeIterative, tmp);
         watcher->setFuture(*future);
 
         QString result = future->result();
-        if (result.isEmpty()) {
-            *future = QtConcurrent::run(this, &ZBarReaderTest::decode, tmp, true);
-            watcher->setFuture(*future);
-        }
         if (result.isEmpty())
             line += " | Unable to decode";
         else
@@ -214,35 +210,59 @@ void ZBarReaderTest::decodeIterative()
     resultOutputEdit->append(res);
 }
 
-QString ZBarReaderTest::decode(const QImage &image, bool useHints)
+QString ZBarReaderTest::decode(const QImage &image)
 {
     Image zbarImg(image.width(), image.height(), "Y800", image.bits(), image.bytesPerLine() * image.height());
 
     QString line;
     ImageScanner scanner;
     scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
-    if (!useHints) {
-      scanner.scan(zbarImg);
-    } else {
-        int fib1 = 1, fib2 = 1;
-        int fib;
-        for (fib = fib1 + fib2; fib < 11; fib = fib1 + fib2) {
-            int roiWidth =  (1. / fib) * image.width(), roiHeight = (1. / fib) * image.height();
-            for (int x = 0; x < image.width(); x += 50) {
-                for (int y = 0; y < image.height(); y += 50) {
-//                  qDebug () << "roiWidth" << roiWidth << "roiHeight" << roiHeight;
-                    QImage img = image.copy(x, y, roiWidth, roiHeight);
-                    Image i(img.width(), img.height(), "Y800", img.bits(), img.bytesPerLine() * img.height());
-                    scanner.scan(i);
-                }
-            }
-            int temp = fib1;
-            fib1 = fib;
-            fib2 = temp;
-        }
-    }
+    scanner.scan(zbarImg);
+
     SymbolSet s = scanner.get_results();
     int resSize = s.get_size();
+    if (resSize > 0) {
+        mTotalRead++;
+        for (SymbolIterator symbol = scanner.get_results().symbol_begin(); symbol != scanner.get_results().symbol_end(); ++symbol) {
+            if (QString::compare("QR-Code ", QString(symbol->get_type_name().data()).trimmed()))
+                line += " | " + QString(symbol->get_data().data()).replace("\n", "<br>");
+        }
+    }
+    return line;
+}
+
+QString ZBarReaderTest::decodeIterative(const QImage &image)
+{
+    Image zbarImg(image.width(), image.height(), "Y800", image.bits(), image.bytesPerLine() * image.height());
+    QString line;
+    ImageScanner scanner;
+    scanner.set_config(ZBAR_NONE, ZBAR_CFG_ENABLE, 1);
+    scanner.scan(zbarImg);
+
+    SymbolSet s = scanner.get_results();
+    int resSize = s.get_size();
+    if (resSize == 0) {
+
+    int fib1 = 1, fib2 = 1;
+    int fib;
+    for (fib = fib1 + fib2; fib < 11; fib = fib1 + fib2) {
+        int roiWidth =  (1. / fib) * image.width(), roiHeight = (1. / fib) * image.height();
+        for (int x = 0; x < image.width(); x += 50) {
+            for (int y = 0; y < image.height(); y += 50) {
+//                qDebug () << "roiWidth" << roiWidth << "roiHeight" << roiHeight;
+                QImage img = image.copy(x, y, roiWidth, roiHeight);
+                Image i(img.width(), img.height(), "Y800", img.bits(), img.bytesPerLine() * img.height());
+                scanner.scan(i);
+            }
+        }
+        int temp = fib1;
+        fib1 = fib;
+        fib2 = temp;
+    }
+    }
+
+    SymbolSet s2 = scanner.get_results();
+    resSize = s2.get_size();
     if (resSize > 0) {
         mTotalRead++;
         for (SymbolIterator symbol = scanner.get_results().symbol_begin(); symbol != scanner.get_results().symbol_end(); ++symbol) {

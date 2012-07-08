@@ -26,7 +26,8 @@ private slots:
     void writeInputFile();
 
 private:
-    QString decode(const QImage &image, bool useHints = false);
+    QString decode(const QImage &image);
+    QString decodeIterative(const QImage &image);
     void loadFiles();
 
 private:
